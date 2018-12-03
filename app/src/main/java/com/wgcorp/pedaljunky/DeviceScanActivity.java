@@ -1,6 +1,7 @@
 package com.wgcorp.pedaljunky;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -21,7 +22,10 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,13 +36,19 @@ import java.util.UUID;
 /**
  * Activity for scanning and displaying available BLE devices.
  */
-public class DeviceScanActivity extends ListActivity {
+public class DeviceScanActivity extends Activity {
 
     private static final String TAG = "DeviceScanActivity";
 
     private BluetoothAdapter mBluetoothAdapter;
 
     private BluetoothLeScanner mBluetoothLeScanner;
+
+    private RecyclerView mRecyclerView;
+
+    private LinearLayoutManager mLayoutManager;
+
+    private MyAdapter mAdapter;
 
     private boolean mScanning;
     private boolean mConnected;
@@ -63,17 +73,33 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_device_scan);
+        mRecyclerView = findViewById(R.id.my_recycler_view);
+
+        mRecyclerView.setHasFixedSize(true);
+
+        // use a linear layout manager
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
+        String[] myDataset = {"XXXXXXXXXXXXXXXXXXX"};
+        mAdapter = new MyAdapter(myDataset);
+        mRecyclerView.setAdapter(mAdapter);
+
+//        // Create the ArrayAdapter use the item row layout and the list data.
+//        ArrayAdapter<String> listDataAdapter = new ArrayAdapter<String>(this, R.layout., R.id.listRowTextView, listData);
+//
+//        // Set this adapter to inner ListView object.
+//        this.setListAdapter(listDataAdapter);
 
         mHandler = new Handler();
 
-        mLeDeviceListAdapter = new LeDeviceListAdapter(this, 2);
-        this.setListAdapter(mLeDeviceListAdapter);
+//        mLeDeviceListAdapter = new LeDeviceListAdapter(this, 2);
+//        this.setListAdapter(mLeDeviceListAdapter);
 
         // Initializes Bluetooth adapter.
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
-
-
     }
 
     @Override
@@ -280,7 +306,6 @@ public class DeviceScanActivity extends ListActivity {
 
             mGatt.readCharacteristic(characteristic);
 
-            Log.i(TAG, "Device Name : TODO");
 
 //            BluetoothGattService service = gatt.getServices().get(0);
 //            BluetoothGattCharacteristic characteristic = service.getCharacteristics().get(0);
@@ -294,7 +319,21 @@ public class DeviceScanActivity extends ListActivity {
         public void onCharacteristicRead(BluetoothGatt gatt, final
         BluetoothGattCharacteristic characteristic, int status) {
             final String value = characteristic.getStringValue(0);
+
+            Log.i(TAG, "Device Name : " + value);
+
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    mAdapter.add(value, 0);
+                    mAdapter.notifyDataSetChanged();
+                }
+            });
+
         }
+
+
     }
 
     public UUID convertFromInteger(int i) {
@@ -303,4 +342,6 @@ public class DeviceScanActivity extends ListActivity {
         long value = i & 0xFFFFFFFF;
         return new UUID(MSB | (value << 32), LSB);
     }
+
+
 }

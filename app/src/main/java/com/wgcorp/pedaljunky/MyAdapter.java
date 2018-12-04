@@ -15,10 +15,12 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     public static class MyViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
         public TextView mTextView;
+        public TextView mTextView2;
 
         public MyViewHolder(View v) {
             super(v);
             mTextView = v.findViewById(R.id.my_text_view);
+            mTextView2 = v.findViewById(R.id.my_text_view_2);
         }
     }
 
@@ -37,7 +39,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
                                                      int viewType) {
         // create a new view
         View v = (View) LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.device_view, parent, false);
+                .inflate(R.layout.device_view2, parent, false);
         MyViewHolder vh = new MyViewHolder(v);
         return vh;
     }
@@ -48,6 +50,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
         holder.mTextView.setText(mDataset[position]);
+        holder.mTextView2.setText("test");
 
     }
 

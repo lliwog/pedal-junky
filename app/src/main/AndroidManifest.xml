@@ -29,8 +29,11 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
-        <activity android:name=".DeviceScanActivity" />
-        <activity android:name=".ServerActivity"></activity>
+        <activity android:name=".DeviceScanActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
+        </activity>
     </application>
 
 </manifest>

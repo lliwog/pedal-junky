@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -51,6 +52,7 @@ public class DeviceScanActivity extends Activity {
     private MyAdapter mAdapter;
 
     private boolean mScanning;
+
     private boolean mConnected;
 
     private Handler mHandler;
@@ -63,7 +65,7 @@ public class DeviceScanActivity extends Activity {
 
     private BluetoothGatt mGatt;
 
-    // Stops scanning after 10 seconds.
+    // Stops scanning after n seconds.
     private static final long SCAN_PERIOD = 20000;
 
     private static final int REQUEST_ENABLE_BT = 1;
@@ -74,17 +76,18 @@ public class DeviceScanActivity extends Activity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_scan);
-        mRecyclerView = findViewById(R.id.my_recycler_view);
 
+        mRecyclerView = findViewById(R.id.my_recycler_view);
         mRecyclerView.setHasFixedSize(true);
 
         // use a linear layout manager
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        String[] myDataset = {"XXXXXXXXXXXXXXXXXXX"};
+        String[] myDataset = {"AAAAA", "BBBBB", "CCCCC"};
         mAdapter = new MyAdapter(myDataset);
         mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
 
 //        // Create the ArrayAdapter use the item row layout and the list data.
 //        ArrayAdapter<String> listDataAdapter = new ArrayAdapter<String>(this, R.layout., R.id.listRowTextView, listData);
@@ -92,7 +95,7 @@ public class DeviceScanActivity extends Activity {
 //        // Set this adapter to inner ListView object.
 //        this.setListAdapter(listDataAdapter);
 
-        mHandler = new Handler();
+//        mHandler = new Handler();
 
 //        mLeDeviceListAdapter = new LeDeviceListAdapter(this, 2);
 //        this.setListAdapter(mLeDeviceListAdapter);
@@ -106,7 +109,7 @@ public class DeviceScanActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        startScan();
+//        startScan();
     }
 
     private void startScan() {

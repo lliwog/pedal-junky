@@ -2,12 +2,12 @@ package com.wgcorp.pedaljunky;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -26,7 +26,6 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +39,17 @@ import java.util.UUID;
 public class DeviceScanActivity extends Activity {
 
     private static final String TAG = "DeviceScanActivity";
+    public static final int GENERIC_ACCESS_SERVICE_UUID = 0x1800;
+    public static final int GENERIC_ATTRIBUTE_SERVICE_UUID = 0x1801;
+    public static final int CYCLING_POWER_SERVICE_UUID = 0x1818;
+    public static final int DEVICE_INFORMATION_SERVICE_UUID = 0x180F;
+    public static final int BATTERY_SERVICE_UUID = 0x180A;
+
+    public static final int DEVICE_NAME_CHARACTERISTIC_UUID = 0x2A00;
+    public static final int CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID = 0x2A63;
+    public static final int CYCLING_POWER_CONTROL_POINT_CHAR_UUID = 0x2A66;
+
+    public static final int CLIENT_CHARACTERISTIC_CONFIG_UUID = 0x2902;
 
     private BluetoothAdapter mBluetoothAdapter;
 
@@ -182,55 +192,6 @@ public class DeviceScanActivity extends Activity {
         requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
     }
 
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//
-//        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//            Log.d(TAG, "coarse location permission granted");
-//            this.scanLeDevice(true);
-//        } else {
-//            Log.i(TAG, "coarse location permission refused, unable to scan");
-//        }
-//
-//    }
-
-//    private void scanLeDevice(final boolean enable) {
-//        if (enable) {
-//            // Stops scanning after a pre-defined scan period.
-//            mHandler.postDelayed(new Runnable() {
-//                @Override
-//                public void run() {
-//                    Log.i(TAG, "Stop scanning...");
-//                    mScanning = false;
-//                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
-//                }
-//            }, SCAN_PERIOD);
-//
-//            Log.i(TAG, "Start scanning...");
-//            mScanning = true;
-//            mBluetoothAdapter.startLeScan(mLeScanCallback);
-//        } else {
-//            mScanning = false;
-//            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-//        }
-//    }
-
-//    // Device scan callback.
-//    private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
-//        @Override
-//        public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    Log.i(TAG, "New device detected: " + device.getAddress());
-////                    mLeDeviceListAdapter.addDevice(device);
-////                    mLeDeviceListAdapter.notifyDataSetChanged();
-//                }
-//            });
-//        }
-//    };
-
     private class BtleScanCallback extends ScanCallback {
 
         @Override
@@ -262,8 +223,6 @@ public class DeviceScanActivity extends Activity {
     private void connectDevice(BluetoothDevice device) {
         GattClientCallback gattClientCallback = new GattClientCallback();
         mGatt = device.connectGatt(this, false, gattClientCallback);
-
-
     }
 
     public void disconnectGattServer() {
@@ -288,7 +247,7 @@ public class DeviceScanActivity extends Activity {
             }
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnected = true;
-                gatt.discoverServices();
+                mGatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 disconnectGattServer();
             }
@@ -297,25 +256,31 @@ public class DeviceScanActivity extends Activity {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             super.onServicesDiscovered(gatt, status);
+
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 return;
             }
 
-            UUID gapService = convertFromInteger(0x1800);
-            UUID deviceNameCharacteristic = convertFromInteger(0x2A00);
+            // device name
+            BluetoothGattService genericAccessService = mGatt.getService(convertFromInteger(GENERIC_ACCESS_SERVICE_UUID));
+            BluetoothGattCharacteristic deviceNameCharacteristic = genericAccessService.getCharacteristic(convertFromInteger(DEVICE_NAME_CHARACTERISTIC_UUID));
+            mGatt.readCharacteristic(deviceNameCharacteristic);
 
-            BluetoothGattService service = mGatt.getService(gapService);
-            BluetoothGattCharacteristic characteristic = service.getCharacteristic(deviceNameCharacteristic);
+            // device infos
+            BluetoothGattService cyclingPowerService = mGatt.getService(convertFromInteger(CYCLING_POWER_SERVICE_UUID));
+            BluetoothGattCharacteristic cyclingPowerMeasurementCharacteristic = cyclingPowerService.getCharacteristic(convertFromInteger(CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID));
 
-            mGatt.readCharacteristic(characteristic);
+            // enable notifications
+            mGatt.setCharacteristicNotification(cyclingPowerMeasurementCharacteristic, true);
+            BluetoothGattDescriptor descriptor = cyclingPowerMeasurementCharacteristic.getDescriptor(convertFromInteger(CLIENT_CHARACTERISTIC_CONFIG_UUID));
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            //            descriptor.setValue(new byte[]{1, 1});
+            mGatt.writeDescriptor(descriptor);
 
+//            BluetoothGattCharacteristic cyclingPowerControlPointChar = cyclingPowerService.getCharacteristic(convertFromInteger(CYCLING_POWER_CONTROL_POINT_CHAR_UUID));
 
-//            BluetoothGattService service = gatt.getServices().get(0);
-//            BluetoothGattCharacteristic characteristic = service.getCharacteristics().get(0);
-
-
-//            BluetoothGattService service = gatt.getService(SERVICE_UUID);
-//            BluetoothGattCharacteristic characteristic = service.getCharacteristic(CHARACTERISTIC_UUID);
+            // Need to know here the code to start data streaming
+//            cyclingPowerControlPointChar.setValue(new byte[]{});
         }
 
         @Override
@@ -325,18 +290,16 @@ public class DeviceScanActivity extends Activity {
 
             Log.i(TAG, "Device Name : " + value);
 
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    mAdapter.add(value, 0);
-                    mAdapter.notifyDataSetChanged();
-                }
+            runOnUiThread(() -> {
+                mAdapter.add(value, 0);
+                mAdapter.notifyDataSetChanged();
             });
-
         }
 
-
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            Log.i(TAG, "onCharacteristicChanged : " + characteristic.getStringValue(0));
+        }
     }
 
     public UUID convertFromInteger(int i) {

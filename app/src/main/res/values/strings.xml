@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">PedalJunky</string>
     <string name="screen_name">Data Screen</string>
-    <string name="send_button">search</string>
+    <string name="scan_button">SCAN</string>
     <string name="ble_not_supported">BLE not supported</string>
     <string name="textview">TextView</string>
 </resources>

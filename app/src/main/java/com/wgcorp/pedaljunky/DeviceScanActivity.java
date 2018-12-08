@@ -39,6 +39,7 @@ import java.util.UUID;
 public class DeviceScanActivity extends Activity {
 
     private static final String TAG = "DeviceScanActivity";
+
     public static final int GENERIC_ACCESS_SERVICE_UUID = 0x1800;
     public static final int GENERIC_ATTRIBUTE_SERVICE_UUID = 0x1801;
     public static final int CYCLING_POWER_SERVICE_UUID = 0x1818;
@@ -67,8 +68,6 @@ public class DeviceScanActivity extends Activity {
 
     private Handler mHandler;
 
-    private LeDeviceListAdapter mLeDeviceListAdapter;
-
     private BtleScanCallback mScanCallback;
 
     private Map<String, BluetoothDevice> mScanResults;
@@ -76,7 +75,7 @@ public class DeviceScanActivity extends Activity {
     private BluetoothGatt mGatt;
 
     // Stops scanning after n seconds.
-    private static final long SCAN_PERIOD = 20000;
+    private static final long SCAN_PERIOD = 10000;
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_FINE_LOCATION = 2;
@@ -94,21 +93,9 @@ public class DeviceScanActivity extends Activity {
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
-        String[] myDataset = {"AAAAA", "BBBBB", "CCCCC"};
-        mAdapter = new MyAdapter(myDataset);
+        mAdapter = new MyAdapter();
         mRecyclerView.setAdapter(mAdapter);
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
-
-//        // Create the ArrayAdapter use the item row layout and the list data.
-//        ArrayAdapter<String> listDataAdapter = new ArrayAdapter<String>(this, R.layout., R.id.listRowTextView, listData);
-//
-//        // Set this adapter to inner ListView object.
-//        this.setListAdapter(listDataAdapter);
-
-//        mHandler = new Handler();
-
-//        mLeDeviceListAdapter = new LeDeviceListAdapter(this, 2);
-//        this.setListAdapter(mLeDeviceListAdapter);
 
         // Initializes Bluetooth adapter.
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -118,8 +105,7 @@ public class DeviceScanActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-
-//        startScan();
+        startScan();
     }
 
     private void startScan() {
@@ -129,9 +115,9 @@ public class DeviceScanActivity extends Activity {
 
         List<ScanFilter> filters = new ArrayList<>();
         ScanSettings settings = new ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+//                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
-
 
         mScanResults = new HashMap<>();
         mScanCallback = new BtleScanCallback();
@@ -165,6 +151,16 @@ public class DeviceScanActivity extends Activity {
         for (String deviceAddress : mScanResults.keySet()) {
             Log.d(TAG, "Found device: " + deviceAddress);
         }
+
+        // test
+        CustomDevice customDevice1 = new CustomDevice("AB:CD:EF:GH:IJ", "My Custom Device 1");
+        CustomDevice customDevice2 = new CustomDevice("AB:CD:EF:GH:IK", "My Custom Device 2");
+        runOnUiThread(() -> {
+            mAdapter.add(customDevice1);
+            mAdapter.add(customDevice2);
+            mAdapter.notifyDataSetChanged();
+        });
+
     }
 
     private boolean hasPermissions() {
@@ -212,11 +208,16 @@ public class DeviceScanActivity extends Activity {
         }
 
         private void addScanResult(ScanResult scanResult) {
-            stopScan();
             BluetoothDevice device = scanResult.getDevice();
-//            String deviceAddress = device.getAddress();
-//            mScanResults.put(deviceAddress, device);
-            connectDevice(device);
+            mScanResults.put(device.getAddress(), device);
+
+            CustomDevice customDevice = new CustomDevice(device.getAddress(), device.getName());
+            runOnUiThread(() -> {
+                mAdapter.add(customDevice);
+                mAdapter.notifyDataSetChanged();
+            });
+
+//            connectDevice(device);
         }
     }
 
@@ -236,7 +237,7 @@ public class DeviceScanActivity extends Activity {
     private class GattClientCallback extends BluetoothGattCallback {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            Log.i(TAG, "# onConnectionStateChange : " + gatt.getDevice().getAddress());
+            Log.i(TAG, "onConnectionStateChange : " + gatt.getDevice().getAddress());
             super.onConnectionStateChange(gatt, status, newState);
             if (status == BluetoothGatt.GATT_FAILURE) {
                 disconnectGattServer();
@@ -273,9 +274,17 @@ public class DeviceScanActivity extends Activity {
             // enable notifications
             mGatt.setCharacteristicNotification(cyclingPowerMeasurementCharacteristic, true);
             BluetoothGattDescriptor descriptor = cyclingPowerMeasurementCharacteristic.getDescriptor(convertFromInteger(CLIENT_CHARACTERISTIC_CONFIG_UUID));
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            //            descriptor.setValue(new byte[]{1, 1});
-            mGatt.writeDescriptor(descriptor);
+
+            // TODO
+//            // sniff packets from third party app to check
+//            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+//            //            descriptor.setValue(new byte[]{1, 1});
+//            boolean res = mGatt.writeDescriptor(descriptor);
+//            if (res) {
+//                Log.i(TAG, "write descriptor success");
+//            } else {
+//                Log.i(TAG, "error when trying to write descriptor");
+//            }
 
 //            BluetoothGattCharacteristic cyclingPowerControlPointChar = cyclingPowerService.getCharacteristic(convertFromInteger(CYCLING_POWER_CONTROL_POINT_CHAR_UUID));
 
@@ -288,12 +297,12 @@ public class DeviceScanActivity extends Activity {
         BluetoothGattCharacteristic characteristic, int status) {
             final String value = characteristic.getStringValue(0);
 
-            Log.i(TAG, "Device Name : " + value);
+//            Log.i(TAG, "Device Name : " + value);
 
-            runOnUiThread(() -> {
-                mAdapter.add(value, 0);
-                mAdapter.notifyDataSetChanged();
-            });
+//            runOnUiThread(() -> {
+//                mAdapter.add(value);
+//                mAdapter.notifyDataSetChanged();
+//            });
         }
 
         @Override

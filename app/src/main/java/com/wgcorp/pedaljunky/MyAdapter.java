@@ -6,8 +6,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
-    private String[] mDataset;
+
+    private List<CustomDevice> mDataset = new ArrayList<>();
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -24,24 +28,21 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         }
     }
 
-    // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(String[] myDataset) {
-        mDataset = myDataset;
-    }
+    public void add(CustomDevice device) {
+        CustomDevice foundDevice = mDataset.stream()
+                .filter(d -> d.getAddress().equals(device.getAddress())).findAny().orElse(null);
 
-    public void add(String element, int position) {
-        mDataset[position] = element;
+        if (foundDevice == null) {
+            mDataset.add(device);
+        }
     }
 
     // Create new views (invoked by the layout manager)
     @Override
-    public MyAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent,
-                                                     int viewType) {
+    public MyAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         // create a new view
-        View v = (View) LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.device_view2, parent, false);
-        MyViewHolder vh = new MyViewHolder(v);
-        return vh;
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.device_view, parent, false);
+        return new MyViewHolder(v);
     }
 
     // Replace the contents of a view (invoked by the layout manager)
@@ -49,14 +50,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     public void onBindViewHolder(MyViewHolder holder, int position) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        holder.mTextView.setText(mDataset[position]);
-        holder.mTextView2.setText("test");
-
+        CustomDevice btDevice = mDataset.get(position);
+        holder.mTextView.setText(btDevice.getName());
+        holder.mTextView2.setText(btDevice.getAddress());
     }
 
     // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
-        return mDataset.length;
+        return mDataset.size();
     }
 }

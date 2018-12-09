@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -284,14 +285,17 @@ public class DeviceScanActivity extends Activity {
                 }
 
                 if (convertFromInteger(DEVICE_INFORMATION_SERVICE_UUID).equals(gattService.getUuid())) {
-                    Log.i(TAG, "Discovered service DEVICE_INFORMATION_SERVICE_");
+                    Log.i(TAG, "Discovered service DEVICE_INFORMATION_SERVICE");
                 }
+
                 if (convertFromInteger(BATTERY_SERVICE_UUID).equals(gattService.getUuid())) {
                     Log.i(TAG, "Discovered service BATTERY_SERVICE");
                 }
 
                 if (convertFromInteger(CYCLING_POWER_SERVICE_UUID).equals(gattService.getUuid())) {
                     Log.i(TAG, "Discovered service CYCLING_POWER_SERVICE");
+
+                    enablePowerNotifications();
                 }
 
                 if (convertFromInteger(HEARTH_RATE_SERVICE_UUID).equals(gattService.getUuid())) {
@@ -301,40 +305,31 @@ public class DeviceScanActivity extends Activity {
                 Log.i(TAG, "Service UUID : " + gattService.getUuid());
             }
 
-            // device name
-            BluetoothGattService genericAccessService = mGatt.getService(convertFromInteger(GENERIC_ACCESS_SERVICE_UUID));
-            BluetoothGattCharacteristic deviceNameCharacteristic = genericAccessService.getCharacteristic(convertFromInteger(DEVICE_NAME_CHARACTERISTIC_UUID));
-            mGatt.readCharacteristic(deviceNameCharacteristic);
+//            // device name
+//            BluetoothGattService genericAccessService = mGatt.getService(convertFromInteger(GENERIC_ACCESS_SERVICE_UUID));
+//            BluetoothGattCharacteristic deviceNameCharacteristic = genericAccessService.getCharacteristic(convertFromInteger(DEVICE_NAME_CHARACTERISTIC_UUID));
+//            mGatt.readCharacteristic(deviceNameCharacteristic);
+        }
 
-//            // device infos
-//            BluetoothGattService cyclingPowerService = mGatt.getService(convertFromInteger(CYCLING_POWER_SERVICE_UUID));
-//            BluetoothGattCharacteristic cyclingPowerMeasurementCharacteristic = cyclingPowerService.getCharacteristic(convertFromInteger(CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID));
-//
-//            // enable notifications
-//            mGatt.setCharacteristicNotification(cyclingPowerMeasurementCharacteristic, true);
-//            BluetoothGattDescriptor descriptor = cyclingPowerMeasurementCharacteristic.getDescriptor(convertFromInteger(CLIENT_CHARACTERISTIC_CONFIG_UUID));
+        private void enablePowerNotifications() {
+            BluetoothGattService cyclingPowerService = mGatt.getService(convertFromInteger(CYCLING_POWER_SERVICE_UUID));
+            BluetoothGattCharacteristic cyclingPowerMeasurementCharacteristic = cyclingPowerService.getCharacteristic(convertFromInteger(CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID));
+            mGatt.setCharacteristicNotification(cyclingPowerMeasurementCharacteristic, true);
+            BluetoothGattDescriptor descriptor = cyclingPowerMeasurementCharacteristic.getDescriptor(convertFromInteger(CLIENT_CHARACTERISTIC_CONFIG_UUID));
 
-            // TODO
-//            // sniff packets from third party app to check
-//            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-//            //            descriptor.setValue(new byte[]{1, 1});
-//            boolean res = mGatt.writeDescriptor(descriptor);
-//            if (res) {
-//                Log.i(TAG, "write descriptor success");
-//            } else {
-//                Log.i(TAG, "error when trying to write descriptor");
-//            }
-
-//            BluetoothGattCharacteristic cyclingPowerControlPointChar = cyclingPowerService.getCharacteristic(convertFromInteger(CYCLING_POWER_CONTROL_POINT_CHAR_UUID));
-
-            // Need to know here the code to start data streaming
-//            cyclingPowerControlPointChar.setValue(new byte[]{});
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            boolean res = mGatt.writeDescriptor(descriptor);
+            if (res) {
+                Log.d(TAG, "write descriptor success");
+            } else {
+                Log.d(TAG, "error when trying to write descriptor");
+            }
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, final
         BluetoothGattCharacteristic characteristic, int status) {
-            final String value = characteristic.getStringValue(0);
+//            final String value = characteristic.getStringValue(0);
 
 //            Log.i(TAG, "Device Name : " + value);
 
@@ -346,7 +341,10 @@ public class DeviceScanActivity extends Activity {
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-            Log.i(TAG, "onCharacteristicChanged : " + characteristic.getStringValue(0));
+            if (convertFromInteger(CYCLING_POWER_MEASUREMENT_CHARACTERISTIC_UUID).equals(characteristic.getUuid())) {
+                int val = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT16, 1);
+                Log.i(TAG, "POWER : " + val);
+            }
         }
     }
 

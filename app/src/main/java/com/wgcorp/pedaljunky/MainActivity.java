@@ -16,11 +16,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
     }
 
+    public void scanBtleDevices(View view) {
+        Intent intent = new Intent(this, DeviceScanActivity.class);
+        startActivity(intent);
+    }
+
     /**
      * Called when the user taps the Send button
      */
-    public void sendMessage(View view) {
-        Intent intent = new Intent(this, DeviceScanActivity.class);
+    public void scanAntDevices(View view) {
+        Intent intent = new Intent(this, AntDeviceScanActivity.class);
         startActivity(intent);
     }
 }

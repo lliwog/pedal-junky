@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -36,7 +37,7 @@ import java.util.UUID;
 /**
  * Activity for scanning and displaying available BLE devices.
  */
-public class DeviceScanActivity extends Activity {
+public class DeviceScanActivity extends AppCompatActivity {
 
     private static final String TAG = "DeviceScanActivity";
 
@@ -76,7 +77,7 @@ public class DeviceScanActivity extends Activity {
     private BluetoothGatt mGatt;
 
     // Stops scanning after n seconds.
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 3000;
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_FINE_LOCATION = 2;
@@ -108,7 +109,7 @@ public class DeviceScanActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        startScan();
+//        startScan();
     }
 
     // 1 - Configure item click on RecyclerView
@@ -156,12 +157,12 @@ public class DeviceScanActivity extends Activity {
         mScanCallback = null;
         mScanning = false;
         mHandler = null;
+
+        ProgressBar progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.INVISIBLE);
     }
 
     private void scanComplete() {
-        ProgressBar progressBar = findViewById(R.id.progressBar);
-        progressBar.setVisibility(View.INVISIBLE);
-
         if (mScanResults.isEmpty()) {
             return;
         }
